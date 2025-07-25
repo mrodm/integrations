@@ -297,3 +297,23 @@ func IsVersionLessThanLogsDBGA(version string) error {
 	fmt.Println("false")
 	return nil
 }
+
+// IsElasticPackageGreaterThan checks whether or not the elastic-package version set in go.mod is greater than the given version
+func IsElasticPackageGreaterThan(version string) error {
+	foundVersion, err := citools.PackageVersionGoMod("github.com/elastic/elastic-package")
+	if err != nil {
+		return fmt.Errorf("failed to get elastic-package version from go.mod: %w", err)
+	}
+	fmt.Printf("Found elastic-package %s\n", foundVersion)
+
+	desiredVersion, err := semver.NewVersion(version)
+	if err != nil {
+		return fmt.Errorf("failed to parse version %q: %w", version, err)
+	}
+
+	if !foundVersion.GreaterThan(desiredVersion) {
+		return fmt.Errorf("elastic-package %s is not greater than the required version %s", foundVersion, desiredVersion)
+	}
+
+	return nil
+}

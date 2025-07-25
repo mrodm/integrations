@@ -11,5 +11,8 @@ mage -v check
 
 check_git_diff
 
-use_elastic_package
-${ELASTIC_PACKAGE_BIN} links check
+if mage isElasticPackageGreaterThan 0.113.0 ; then
+    # links require at least v0.113.0
+    use_elastic_package
+    ${ELASTIC_PACKAGE_BIN} links check
+fi

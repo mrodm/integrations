@@ -8,6 +8,11 @@
     - description: Add logs support via multisignal (query samples, top queries)
       type: enhancement
       link: https://github.com/elastic/integrations/issues/17441
+- version: "0.1.2"
+  changes:
+    - description: test other package
+      type: bugfix
+      link: https://github.com/elastic/integrations/pull/1117
 - version: "0.1.1"
   changes:
     - description: Add metrics configuration

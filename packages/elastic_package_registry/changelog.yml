@@ -18,6 +18,11 @@
   changes:
     - description: other test
       type: bugfix
+      link: https://github.com/mrodm/integrations/pull/1116
+- version: "0.1.4"
+  changes:
+    - description: other test
+      type: bugfix
       link: https://github.com/mrodm/integrations/pull/1115
 - version: "0.1.3"
   changes:

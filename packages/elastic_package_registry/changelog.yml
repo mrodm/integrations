@@ -9,6 +9,14 @@
     - description: Add support for stack 9.0
       type: enhancement
       link: https://github.com/elastic/integrations/pull/12117
+- version: "0.2.1"
+  changes:
+    - description: test one
+      type: bugfix
+      link: https://github.com/mrodm/integrations/pull/1111
+    - description: test two
+      type: bugfix
+      link: https://github.com/mrodm/integrations/pull/1111
 - version: "0.2.0"
   changes:
     - description: Fix legacy dashboards.

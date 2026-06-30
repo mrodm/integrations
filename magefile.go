@@ -24,6 +24,7 @@ import (
 
 	"github.com/elastic/integrations/dev/backports"
 	"github.com/elastic/integrations/dev/backports/changelog"
+	bppackages "github.com/elastic/integrations/dev/backports/packages"
 	"github.com/elastic/integrations/dev/citools"
 	"github.com/elastic/integrations/dev/codeowners"
 	"github.com/elastic/integrations/dev/coverage"
@@ -382,6 +383,65 @@ func CheckBackportBranchActive(branch string, asJSON *bool) error {
 
 	if !result.Active {
 		os.Exit(1)
+	}
+	return nil
+}
+
+// DetectBackportPackages lists the packages touched by commits between before and after.
+// Runs git diff --name-only before..after and maps the changed files to package names
+// using the packages/ directory as the root.
+// Plain output: one package name per line. Pass -json for a JSON array.
+func DetectBackportPackages(before, after string, asJSON *bool) error {
+	out, err := sh.Output("git", "diff", "--name-only", before+".."+after)
+	if err != nil {
+		return fmt.Errorf("running git diff: %w", err)
+	}
+
+	var files []string
+	for _, line := range strings.Split(out, "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			files = append(files, line)
+		}
+	}
+
+	pkgs, err := bppackages.DetectPackages(files, "packages")
+	if err != nil {
+		return err
+	}
+	if pkgs == nil {
+		pkgs = []string{}
+	}
+
+	if asJSON != nil && *asJSON {
+		data, _ := json.Marshal(pkgs)
+		fmt.Println(string(data))
+	} else {
+		for _, p := range pkgs {
+			fmt.Println(p)
+		}
+	}
+	return nil
+}
+
+// ListActiveBackportBranches lists active backport branches for the given package per .backports.yml.
+// Plain output: one branch name per line. Pass -json for a JSON array of full entries including
+// branch, maintained_until, and archived fields.
+func ListActiveBackportBranches(packageName string, asJSON *bool) error {
+	results, err := backports.ListActiveBackportBranches(".backports.yml", packageName, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if results == nil {
+		results = []backports.ActiveResult{}
+	}
+
+	if asJSON != nil && *asJSON {
+		data, _ := json.Marshal(results)
+		fmt.Println(string(data))
+	} else {
+		for _, r := range results {
+			fmt.Println(r.Branch)
+		}
 	}
 	return nil
 }

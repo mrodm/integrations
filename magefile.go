@@ -24,6 +24,7 @@ import (
 
 	"github.com/elastic/integrations/dev/backports"
 	"github.com/elastic/integrations/dev/backports/changelog"
+	bpchecklist "github.com/elastic/integrations/dev/backports/checklist"
 	bppackages "github.com/elastic/integrations/dev/backports/packages"
 	"github.com/elastic/integrations/dev/citools"
 	"github.com/elastic/integrations/dev/codeowners"
@@ -442,6 +443,57 @@ func ListActiveBackportBranches(packageName string, asJSON *bool) error {
 		for _, r := range results {
 			fmt.Println(r.Branch)
 		}
+	}
+	return nil
+}
+
+// RenderBackportChecklist prints the backport-checklist comment body for a PR.
+// It reads the list of packages from the file at ARTIFACT (a JSON file with shape
+// {"pr_number": N, "packages": [...]}) and the existing comment body (if any) from
+// stdin. Active branches for each package are looked up in .backports.yml using the
+// current UTC time. Previously checked boxes are preserved: any branch that appeared
+// as "- [x] `branch`" in the existing body is rendered ticked in the new body.
+// Prints nothing when no package has any active branch; callers should skip posting.
+func RenderBackportChecklist() error {
+	artifactPath := os.Getenv("ARTIFACT")
+	if artifactPath == "" {
+		return fmt.Errorf("ARTIFACT env var must be set to the path of the pr-packages JSON file")
+	}
+
+	data, err := os.ReadFile(artifactPath)
+	if err != nil {
+		return fmt.Errorf("reading artifact: %w", err)
+	}
+
+	var artifact struct {
+		Packages []string `json:"packages"`
+	}
+	if err := json.Unmarshal(data, &artifact); err != nil {
+		return fmt.Errorf("parsing artifact: %w", err)
+	}
+
+	existingBody, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return fmt.Errorf("reading stdin: %w", err)
+	}
+
+	checked := bpchecklist.ParseCheckedBranches(string(existingBody))
+
+	pkgs := make([]bpchecklist.PackageBranches, 0, len(artifact.Packages))
+	for _, pkg := range artifact.Packages {
+		branches, err := backports.ListActiveBackportBranches(".backports.yml", pkg, time.Now().UTC())
+		if err != nil {
+			return fmt.Errorf("listing active branches for %s: %w", pkg, err)
+		}
+		pkgs = append(pkgs, bpchecklist.PackageBranches{
+			Package:  pkg,
+			Branches: branches,
+		})
+	}
+
+	body := bpchecklist.BuildComment(pkgs, checked)
+	if body != "" {
+		fmt.Print(body)
 	}
 	return nil
 }

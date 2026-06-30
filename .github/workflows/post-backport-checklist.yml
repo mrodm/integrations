@@ -38,97 +38,39 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
+          ARTIFACT: artifacts/pr-packages.json
         run: |
-          ARTIFACT="artifacts/pr-packages.json"
           if [[ ! -f "$ARTIFACT" ]]; then
             echo "Artifact not found — exiting"
             exit 0
           fi
 
           PR_NUMBER=$(jq -r '.pr_number' "$ARTIFACT")
-          mapfile -t PACKAGES < <(jq -r '.packages[]' "$ARTIFACT")
 
-          if [[ "${#PACKAGES[@]}" -eq 0 ]]; then
-            echo "No packages detected — exiting silently"
-            exit 0
-          fi
-
-          # Collect active branches per package
-          declare -A ACTIVE_BRANCHES
-          TOTAL_ACTIVE=0
-          for package in "${PACKAGES[@]}"; do
-            branches=$(mage -d "$GITHUB_WORKSPACE" listActiveBackportBranches "$package" -asJSON)
-            ACTIVE_BRANCHES["$package"]="$branches"
-            count=$(echo "$branches" | jq 'length')
-            TOTAL_ACTIVE=$((TOTAL_ACTIVE + count))
-          done
-
-          if [[ "$TOTAL_ACTIVE" -eq 0 ]]; then
-            echo "No active backport branches found for any detected package — exiting silently"
-            exit 0
-          fi
-
-          # Find an existing checklist comment (first match wins)
+          # Find an existing checklist comment (first match wins).
+          # --jq with --paginate emits one JSON object per matching comment;
+          # [0] keeps only the first so we update rather than duplicate.
           EXISTING=$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
             --paginate \
-            --jq '.[] | select(.body | contains("<!-- backport-checklist -->")) | {id: .id, body: .body}' \
-            | head -1)
+            --jq '[.[] | select(.body | contains("<!-- backport-checklist -->"))][0] // {}')
 
-          COMMENT_ID=$(echo "$EXISTING" | jq -r '.id // empty' 2>/dev/null || true)
-          EXISTING_BODY=$(echo "$EXISTING" | jq -r '.body // empty' 2>/dev/null || true)
+          COMMENT_ID=$(jq -r '.id // empty' <<< "$EXISTING")
+          EXISTING_BODY=$(jq -r '.body // empty' <<< "$EXISTING")
 
-          # Extract checked branch states from the existing comment so they are preserved
-          declare -A CHECKED
-          if [[ -n "$EXISTING_BODY" ]]; then
-            while IFS= read -r line; do
-              if [[ "$line" =~ ^-\ \[x\]\ \`([^\`]+)\` ]]; then
-                CHECKED["${BASH_REMATCH[1]}"]="x"
-              fi
-            done <<< "$EXISTING_BODY"
+          # Render the new comment body. The existing body is piped into stdin so
+          # the mage target can parse previously-checked branches and preserve their
+          # state. Prints nothing when no package has any active branch.
+          NEW_BODY=$(printf '%s' "$EXISTING_BODY" | \
+            ARTIFACT="$ARTIFACT" mage -d "$GITHUB_WORKSPACE" renderBackportChecklist)
+
+          if [[ -z "$NEW_BODY" ]]; then
+            echo "No active backport branches — nothing to post"
+            exit 0
           fi
 
-          # Build the comment body
+          # Write to a file to avoid quoting issues when passing to gh api.
           BODY_FILE=$(mktemp)
-          {
-            echo '<!-- backport-checklist -->'
-            echo '## Backport checklist'
-            echo ''
-            echo "Only branches for packages touched by this PR's current diff are shown."
-            echo ''
-            echo 'Check the branches to backport this change to. PRs will be created automatically'
-            echo 'on merge, or when you update this checklist after merge.'
-            echo ''
-
-            FIRST=true
-            for package in "${PACKAGES[@]}"; do
-              branches="${ACTIVE_BRANCHES[$package]}"
-              count=$(echo "$branches" | jq 'length')
-              [[ "$count" -eq 0 ]] && continue
-
-              [[ "$FIRST" == "false" ]] && echo ''
-              FIRST=false
-
-              echo "**$package**"
-              while IFS= read -r entry; do
-                branch=$(echo "$entry" | jq -r '.branch')
-                maintained_until=$(echo "$entry" | jq -r '.maintained_until // empty')
-                state=" "
-                [[ -n "${CHECKED[$branch]+x}" ]] && state="x"
-                line="- [$state] \`$branch\`"
-                [[ -n "$maintained_until" ]] && line+=" (maintained until $maintained_until)"
-                echo "$line"
-              done < <(echo "$branches" | jq -c '.[]')
-            done
-
-            echo ''
-            echo '---'
-            echo ''
-            echo '> [!TIP]'
-            echo '> If a branch above is no longer required, set `archived: true` in its entry in'
-            echo '> `.backports.yml` to stop it appearing in future checklists.'
-            echo '> If the branch has a known end-of-life date, prefer `maintained_until: "YYYY-MM-DD"` —'
-            echo '> it will be excluded automatically once that date passes.'
-          } > "$BODY_FILE"
+          printf '%s' "$NEW_BODY" > "$BODY_FILE"
 
           if [[ -n "$COMMENT_ID" ]]; then
             gh api --method PATCH \

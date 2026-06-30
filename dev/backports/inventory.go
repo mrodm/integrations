@@ -67,6 +67,31 @@ type ActiveResult struct {
 	MaintainedUntil *string `json:"maintained_until"`
 }
 
+// ListActiveBackportBranches returns all active backport branches for the given
+// package in the inventory at path. Branches are returned in inventory order.
+// Returns an empty slice (no error) when the package has no active branches or
+// does not appear in the inventory at all.
+func ListActiveBackportBranches(path, packageName string, now time.Time) ([]ActiveResult, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading inventory: %w", err)
+	}
+	var inv inventory
+	if err := yaml.Unmarshal(data, &inv); err != nil {
+		return nil, fmt.Errorf("parsing inventory: %w", err)
+	}
+	var results []ActiveResult
+	for _, e := range inv.Backports {
+		if e.Package != packageName {
+			continue
+		}
+		if r := e.activeResult(now); r.Active {
+			results = append(results, r)
+		}
+	}
+	return results, nil
+}
+
 // CheckActive looks up branch in the inventory at path and reports whether it
 // is currently active. now is injected so callers can test with a fixed date.
 // Returns an error if the inventory cannot be read, parsed, or the branch is not found.

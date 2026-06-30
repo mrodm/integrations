@@ -16,9 +16,9 @@ import (
 	"github.com/elastic/integrations/dev/backports"
 )
 
-// Marker is the HTML comment embedded at the start of every checklist comment.
+// marker is the HTML comment embedded at the start of every checklist comment.
 // It is used to find and update an existing checklist rather than posting a new one.
-const Marker = "<!-- backport-checklist -->"
+const marker = "<!-- backport-checklist -->"
 
 // PackageBranches pairs a package name with its active backport branches.
 // Branches are in the order returned by ListActiveBackportBranches (inventory order).
@@ -27,8 +27,8 @@ type PackageBranches struct {
 	Branches []backports.ActiveResult
 }
 
-// HasActiveBranches reports whether at least one package has at least one active branch.
-func HasActiveBranches(pkgs []PackageBranches) bool {
+// hasActiveBranches reports whether at least one package has at least one active branch.
+func hasActiveBranches(pkgs []PackageBranches) bool {
 	for _, p := range pkgs {
 		if len(p.Branches) > 0 {
 			return true
@@ -45,7 +45,7 @@ var checkedLineRe = regexp.MustCompile("^- \\[x\\] `([^`]+)`")
 // returns an empty (non-nil) map so callers never need a nil check.
 func ParseCheckedBranches(body string) map[string]bool {
 	checked := make(map[string]bool)
-	if !strings.Contains(body, Marker) {
+	if !strings.Contains(body, marker) {
 		return checked
 	}
 	for line := range strings.SplitSeq(body, "\n") {
@@ -56,20 +56,20 @@ func ParseCheckedBranches(body string) map[string]bool {
 	return checked
 }
 
-// BuildComment renders the full checklist comment body starting with Marker.
+// BuildComment renders the full checklist comment body starting with marker.
 // Branches present in checked are rendered as ticked (- [x]). Packages that
 // have no active branches are omitted, so stale sections disappear automatically
 // on recompute without any special removal logic.
 //
 // Returns "" when no package has any active branch; callers should skip posting.
 func BuildComment(pkgs []PackageBranches, checked map[string]bool) string {
-	if !HasActiveBranches(pkgs) {
+	if !hasActiveBranches(pkgs) {
 		return ""
 	}
 
 	var b strings.Builder
 
-	fmt.Fprintln(&b, Marker)
+	fmt.Fprintln(&b, marker)
 	fmt.Fprintln(&b, "## Backport checklist")
 	fmt.Fprintln(&b)
 	fmt.Fprintln(&b, "Only branches for packages touched by this PR's current diff are shown.")

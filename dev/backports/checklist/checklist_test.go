@@ -51,7 +51,7 @@ func TestBuildComment(t *testing.T) {
 				{Package: "aws", Branches: []backports.ActiveResult{awsBranch("backport-aws-6.14")}},
 			},
 			checked:      map[string]bool{},
-			wantContains: []string{Marker},
+			wantContains: []string{marker},
 		},
 		{
 			title: "package header and branch line rendered",
@@ -161,28 +161,28 @@ func TestParseCheckedBranches(t *testing.T) {
 		},
 		{
 			title: "single checked branch",
-			body:  Marker + "\n- [x] `backport-aws-6.14`\n",
+			body:  marker + "\n- [x] `backport-aws-6.14`\n",
 			want:  map[string]bool{"backport-aws-6.14": true},
 		},
 		{
 			title: "unchecked branch not collected",
-			body:  Marker + "\n- [ ] `backport-aws-6.14`\n",
+			body:  marker + "\n- [ ] `backport-aws-6.14`\n",
 			want:  map[string]bool{},
 		},
 		{
 			title: "mix of checked and unchecked",
-			body:  Marker + "\n- [x] `backport-aws-6.14`\n- [ ] `backport-aws-6.15`\n",
+			body:  marker + "\n- [x] `backport-aws-6.14`\n- [ ] `backport-aws-6.15`\n",
 			want:  map[string]bool{"backport-aws-6.14": true},
 		},
 		{
 			title: "multiple checked branches across packages",
-			body: Marker + "\n**aws**\n- [x] `backport-aws-6.14`\n- [ ] `backport-aws-6.15`\n\n" +
+			body: marker + "\n**aws**\n- [x] `backport-aws-6.14`\n- [ ] `backport-aws-6.15`\n\n" +
 				"**kubernetes**\n- [x] `backport-kubernetes-1.28`\n",
 			want: map[string]bool{"backport-aws-6.14": true, "backport-kubernetes-1.28": true},
 		},
 		{
 			title: "branch with maintained_until suffix still parsed",
-			body:  Marker + "\n- [x] `backport-aws-6.14` (maintained until 2027-01-15)\n",
+			body:  marker + "\n- [x] `backport-aws-6.14` (maintained until 2027-01-15)\n",
 			want:  map[string]bool{"backport-aws-6.14": true},
 		},
 	}

@@ -424,29 +424,6 @@ func DetectBackportPackages(before, after string, asJSON *bool) error {
 	return nil
 }
 
-// ListActiveBackportBranches lists active backport branches for the given package per .backports.yml.
-// Plain output: one branch name per line. Pass -json for a JSON array of full entries including
-// branch, maintained_until, and archived fields.
-func ListActiveBackportBranches(packageName string, asJSON *bool) error {
-	results, err := backports.ListActiveBackportBranches(".backports.yml", packageName, time.Now().UTC())
-	if err != nil {
-		return err
-	}
-	if results == nil {
-		results = []backports.ActiveResult{}
-	}
-
-	if asJSON != nil && *asJSON {
-		data, _ := json.Marshal(results)
-		fmt.Println(string(data))
-	} else {
-		for _, r := range results {
-			fmt.Println(r.Branch)
-		}
-	}
-	return nil
-}
-
 // RenderBackportChecklist prints the backport-checklist comment body for a PR.
 // It reads the list of packages from the file at ARTIFACT (a JSON file with shape
 // {"pr_number": N, "packages": [...]}) and the existing comment body (if any) from

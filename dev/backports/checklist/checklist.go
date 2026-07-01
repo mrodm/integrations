@@ -11,6 +11,7 @@ package checklist
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/elastic/integrations/dev/backports"
@@ -25,16 +26,6 @@ const marker = "<!-- backport-checklist -->"
 type PackageBranches struct {
 	Package  string
 	Branches []backports.ActiveResult
-}
-
-// hasActiveBranches reports whether at least one package has at least one active branch.
-func hasActiveBranches(pkgs []PackageBranches) bool {
-	for _, p := range pkgs {
-		if len(p.Branches) > 0 {
-			return true
-		}
-	}
-	return false
 }
 
 // checkedLineRe matches a checked checkbox line: "- [x] `branch-name`..."
@@ -63,7 +54,7 @@ func ParseCheckedBranches(body string) map[string]bool {
 //
 // Returns "" when no package has any active branch; callers should skip posting.
 func BuildComment(pkgs []PackageBranches, checked map[string]bool) string {
-	if !hasActiveBranches(pkgs) {
+	if !slices.ContainsFunc(pkgs, func(p PackageBranches) bool { return len(p.Branches) > 0 }) {
 		return ""
 	}
 

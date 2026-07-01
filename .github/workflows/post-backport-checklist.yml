@@ -70,6 +70,7 @@ jobs:
 
           # Write to a file to avoid quoting issues when passing to gh api.
           BODY_FILE=$(mktemp)
+          trap 'rm -f "$BODY_FILE"' EXIT
           printf '%s' "$NEW_BODY" > "$BODY_FILE"
 
           if [[ -n "$COMMENT_ID" ]]; then
@@ -83,5 +84,3 @@ jobs:
               --field body=@"$BODY_FILE"
             echo "Created checklist comment on PR #$PR_NUMBER"
           fi
-
-          rm -f "$BODY_FILE"

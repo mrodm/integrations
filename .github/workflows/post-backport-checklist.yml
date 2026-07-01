@@ -34,7 +34,8 @@ jobs:
           name: pr-packages-${{ github.event.workflow_run.id }}
           path: artifacts
 
-      - name: Post or update checklist
+      - name: Validate artifact and find checklist comment
+        id: find-comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
@@ -46,6 +47,7 @@ jobs:
           fi
 
           PR_NUMBER=$(jq -r '.pr_number' "$ARTIFACT")
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
           # Collect all comments that contain the checklist marker across all pages.
           MATCHING=$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
@@ -63,9 +65,22 @@ jobs:
             exit 1
           fi
 
-          EXISTING=$(jq 'first // {}' <<< "$MATCHING")
-          COMMENT_ID=$(jq -r '.id // empty' <<< "$EXISTING")
-          EXISTING_BODY=$(jq -r '.body // empty' <<< "$EXISTING")
+          echo "comment_id=$(jq -r 'first.id // empty' <<< "$MATCHING")" >> "$GITHUB_OUTPUT"
+
+      - name: Render and post checklist comment
+        if: steps.find-comment.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          ARTIFACT: artifacts/pr-packages.json
+          PR_NUMBER: ${{ steps.find-comment.outputs.pr_number }}
+          COMMENT_ID: ${{ steps.find-comment.outputs.comment_id }}
+        run: |
+          EXISTING_BODY=""
+          if [[ -n "$COMMENT_ID" ]]; then
+            EXISTING_BODY=$(gh api "repos/$REPOSITORY/issues/comments/$COMMENT_ID" \
+              --jq '.body // empty')
+          fi
 
           # Render the new comment body. The existing body is piped into stdin so
           # the mage target can parse previously-checked branches and preserve their

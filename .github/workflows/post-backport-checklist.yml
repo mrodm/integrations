@@ -47,13 +47,23 @@ jobs:
 
           PR_NUMBER=$(jq -r '.pr_number' "$ARTIFACT")
 
-          # Find an existing checklist comment (first match wins).
-          # --jq with --paginate emits one JSON object per matching comment;
-          # [0] keeps only the first so we update rather than duplicate.
-          EXISTING=$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
+          # Collect all comments that contain the checklist marker across all pages.
+          MATCHING=$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
             --paginate \
-            --jq '[.[] | select(.body | contains("<!-- backport-checklist -->"))][0] // {}')
+            --jq '.[] | select(.body | contains("<!-- backport-checklist -->"))' \
+            | jq -s '.')
 
+          COUNT=$(jq 'length' <<< "$MATCHING")
+          if [[ "$COUNT" -gt 1 ]]; then
+            IDS=$(jq -r '.[].id' <<< "$MATCHING" | paste -sd ', ')
+            gh api --method POST \
+              "repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
+              --field body=":warning: **Backport checklist error**: found ${COUNT} duplicate checklist comments (IDs: ${IDS}). Please delete the extras manually so the checklist can be updated automatically."
+            echo "Duplicate checklist comments found — posted notice to PR #$PR_NUMBER" >&2
+            exit 1
+          fi
+
+          EXISTING=$(jq 'first // {}' <<< "$MATCHING")
           COMMENT_ID=$(jq -r '.id // empty' <<< "$EXISTING")
           EXISTING_BODY=$(jq -r '.body // empty' <<< "$EXISTING")
 

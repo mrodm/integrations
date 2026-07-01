@@ -411,7 +411,10 @@ func DetectBackportPackages(before, after string, asJSON *bool) error {
 	}
 
 	if asJSON != nil && *asJSON {
-		data, _ := json.Marshal(pkgs)
+		data, err := json.Marshal(pkgs)
+		if err != nil {
+			return fmt.Errorf("marshalling packages: %w", err)
+		}
 		fmt.Println(string(data))
 	} else {
 		for _, p := range pkgs {

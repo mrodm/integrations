@@ -66,18 +66,26 @@ type ActiveResult struct {
 	MaintainedUntil *string `json:"maintained_until"`
 }
 
+func loadInventory(path string) (inventory, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return inventory{}, fmt.Errorf("reading inventory: %w", err)
+	}
+	var inv inventory
+	if err := yaml.Unmarshal(data, &inv); err != nil {
+		return inventory{}, fmt.Errorf("parsing inventory: %w", err)
+	}
+	return inv, nil
+}
+
 // ListAllActiveBackportBranches returns the active backport branches for each
 // package in packages, parsing the inventory at path exactly once.
 // The returned map has one entry per name in packages; packages with no active
 // branches (or not present in the inventory) have an empty, non-nil slice.
 func ListAllActiveBackportBranches(path string, packages []string, now time.Time) (map[string][]ActiveResult, error) {
-	data, err := os.ReadFile(path)
+	inv, err := loadInventory(path)
 	if err != nil {
-		return nil, fmt.Errorf("reading inventory: %w", err)
-	}
-	var inv inventory
-	if err := yaml.Unmarshal(data, &inv); err != nil {
-		return nil, fmt.Errorf("parsing inventory: %w", err)
+		return nil, err
 	}
 
 	want := make(map[string]struct{}, len(packages))
@@ -104,13 +112,9 @@ func ListAllActiveBackportBranches(path string, packages []string, now time.Time
 // is currently active. now is injected so callers can test with a fixed date.
 // Returns an error if the inventory cannot be read, parsed, or the branch is not found.
 func CheckActive(path, branch string, now time.Time) (ActiveResult, error) {
-	data, err := os.ReadFile(path)
+	inv, err := loadInventory(path)
 	if err != nil {
-		return ActiveResult{}, fmt.Errorf("reading inventory: %w", err)
-	}
-	var inv inventory
-	if err := yaml.Unmarshal(data, &inv); err != nil {
-		return ActiveResult{}, fmt.Errorf("parsing inventory: %w", err)
+		return ActiveResult{}, err
 	}
 	for _, e := range inv.Backports {
 		if e.Branch == branch {
@@ -140,6 +144,10 @@ func (e entry) activeResult(now time.Time) ActiveResult {
 	if e.MaintainedUntil != nil {
 		t, err := time.Parse(maintainedUntilLayout, *e.MaintainedUntil)
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+		// On parse error the branch stays active (fail-open): better to show a branch
+		// that might be expired than to silently hide one that is still required.
+		// ValidateInventory enforces date format, so this path is only reachable via
+		// a direct unvalidated edit.
 		if err == nil && t.Before(today) {
 			result.Active = false
 		}
@@ -316,14 +324,9 @@ func newEntryNode(pkg, branch, baseVersion, baseCommit string) *yaml.Node {
 // entry's package field names a real package. Pass an empty string to skip
 // this check (useful in unit tests that do not have a full checkout).
 func ValidateInventory(path, packagesDir string) error {
-	data, err := os.ReadFile(path)
+	inv, err := loadInventory(path)
 	if err != nil {
-		return fmt.Errorf("reading inventory: %w", err)
-	}
-
-	var inv inventory
-	if err := yaml.Unmarshal(data, &inv); err != nil {
-		return fmt.Errorf("parsing inventory: %w", err)
+		return err
 	}
 
 	knownPackages, err := buildKnownPackages(packagesDir)

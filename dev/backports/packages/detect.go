@@ -23,35 +23,19 @@ import (
 //
 // Returns a deduplicated list of package names in the order they are first encountered.
 func DetectPackages(files []string, packagesDir string) ([]string, error) {
-	pkgPaths, err := citools.ListPackages(packagesDir)
+	pkgs, err := citools.ListPackagesWithNames(packagesDir)
 	if err != nil {
 		return nil, fmt.Errorf("listing packages in %s: %w", packagesDir, err)
-	}
-
-	type pkg struct {
-		prefix string // path/to/package/ (with trailing separator)
-		name   string
-	}
-	known := make([]pkg, 0, len(pkgPaths))
-	for _, p := range pkgPaths {
-		manifest, err := citools.ReadPackageManifest(filepath.Join(p, citools.ManifestFileName))
-		if err != nil {
-			return nil, fmt.Errorf("reading manifest for %s: %w", p, err)
-		}
-		known = append(known, pkg{
-			prefix: p + string(filepath.Separator),
-			name:   manifest.Name,
-		})
 	}
 
 	seen := make(map[string]struct{})
 	result := make([]string, 0)
 	for _, f := range files {
-		for _, k := range known {
-			if strings.HasPrefix(f, k.prefix) {
-				if _, ok := seen[k.name]; !ok {
-					seen[k.name] = struct{}{}
-					result = append(result, k.name)
+		for _, p := range pkgs {
+			if strings.HasPrefix(f, p.Path+string(filepath.Separator)) {
+				if _, ok := seen[p.Name]; !ok {
+					seen[p.Name] = struct{}{}
+					result = append(result, p.Name)
 				}
 				break
 			}

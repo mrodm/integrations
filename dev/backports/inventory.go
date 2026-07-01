@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -440,17 +439,13 @@ func buildKnownPackages(packagesDir string) (map[string]struct{}, error) {
 	if packagesDir == "" {
 		return nil, nil
 	}
-	paths, err := citools.ListPackages(packagesDir)
+	pkgs, err := citools.ListPackagesWithNames(packagesDir)
 	if err != nil {
 		return nil, err
 	}
-	known := make(map[string]struct{}, len(paths))
-	for _, p := range paths {
-		manifest, err := citools.ReadPackageManifest(filepath.Join(p, citools.ManifestFileName))
-		if err != nil {
-			return nil, fmt.Errorf("reading manifest at %s: %w", p, err)
-		}
-		known[manifest.Name] = struct{}{}
+	known := make(map[string]struct{}, len(pkgs))
+	for _, p := range pkgs {
+		known[p.Name] = struct{}{}
 	}
 	return known, nil
 }

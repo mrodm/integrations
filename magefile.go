@@ -409,9 +409,6 @@ func DetectBackportPackages(before, after string, asJSON *bool) error {
 	if err != nil {
 		return err
 	}
-	if pkgs == nil {
-		pkgs = []string{}
-	}
 
 	if asJSON != nil && *asJSON {
 		data, _ := json.Marshal(pkgs)
@@ -456,15 +453,16 @@ func RenderBackportChecklist() error {
 
 	checked := bpchecklist.ParseCheckedBranches(string(existingBody))
 
+	branchesByPkg, err := backports.ListAllActiveBackportBranches(".backports.yml", artifact.Packages, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("listing active backport branches: %w", err)
+	}
+
 	pkgs := make([]bpchecklist.PackageBranches, 0, len(artifact.Packages))
 	for _, pkg := range artifact.Packages {
-		branches, err := backports.ListActiveBackportBranches(".backports.yml", pkg, time.Now().UTC())
-		if err != nil {
-			return fmt.Errorf("listing active branches for %s: %w", pkg, err)
-		}
 		pkgs = append(pkgs, bpchecklist.PackageBranches{
 			Package:  pkg,
-			Branches: branches,
+			Branches: branchesByPkg[pkg],
 		})
 	}
 

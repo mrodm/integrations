@@ -788,52 +788,54 @@ const listActiveInventory = `backports:
     remove_other_packages: false
 `
 
-func TestListActiveBackportBranches(t *testing.T) {
+func TestListAllActiveBackportBranches(t *testing.T) {
 	now := time.Date(2026, 6, 4, 12, 0, 0, 0, time.UTC)
 	path := writeTemp(t, listActiveInventory)
 
-	t.Run("returns only active branches for the given package", func(t *testing.T) {
-		results, err := ListActiveBackportBranches(path, "mypkg", now)
+	t.Run("returns active branches for all requested packages in one call", func(t *testing.T) {
+		result, err := ListAllActiveBackportBranches(path, []string{"mypkg", "other"}, now)
 		require.NoError(t, err)
-		require.Len(t, results, 2)
-		assert.Equal(t, "backport-mypkg-1.0", results[0].Branch)
-		assert.True(t, results[0].Active)
-		assert.Equal(t, "backport-mypkg-4.0", results[1].Branch)
-		assert.True(t, results[1].Active)
-		assert.Equal(t, ptr("2099-12-31"), results[1].MaintainedUntil)
+		require.Len(t, result["mypkg"], 2)
+		assert.Equal(t, "backport-mypkg-1.0", result["mypkg"][0].Branch)
+		assert.Equal(t, "backport-mypkg-4.0", result["mypkg"][1].Branch)
+		require.Len(t, result["other"], 1)
+		assert.Equal(t, "backport-other-1.0", result["other"][0].Branch)
 	})
 
-	t.Run("archived branch is excluded", func(t *testing.T) {
-		results, err := ListActiveBackportBranches(path, "mypkg", now)
+	t.Run("package with no active branches gets empty non-nil slice", func(t *testing.T) {
+		result, err := ListAllActiveBackportBranches(path, []string{"no-such-pkg"}, now)
 		require.NoError(t, err)
-		for _, r := range results {
+		branches, ok := result["no-such-pkg"]
+		assert.True(t, ok, "key must be present even when no branches match")
+		assert.NotNil(t, branches)
+		assert.Empty(t, branches)
+	})
+
+	t.Run("archived and expired branches are excluded", func(t *testing.T) {
+		result, err := ListAllActiveBackportBranches(path, []string{"mypkg"}, now)
+		require.NoError(t, err)
+		for _, r := range result["mypkg"] {
 			assert.NotEqual(t, "backport-mypkg-2.0", r.Branch, "archived branch must not appear")
-		}
-	})
-
-	t.Run("expired maintained_until branch is excluded", func(t *testing.T) {
-		results, err := ListActiveBackportBranches(path, "mypkg", now)
-		require.NoError(t, err)
-		for _, r := range results {
 			assert.NotEqual(t, "backport-mypkg-3.0", r.Branch, "expired branch must not appear")
 		}
 	})
 
-	t.Run("only the requested package is returned", func(t *testing.T) {
-		results, err := ListActiveBackportBranches(path, "other", now)
+	t.Run("only requested packages appear in the result", func(t *testing.T) {
+		result, err := ListAllActiveBackportBranches(path, []string{"other"}, now)
 		require.NoError(t, err)
-		require.Len(t, results, 1)
-		assert.Equal(t, "backport-other-1.0", results[0].Branch)
+		assert.Len(t, result, 1)
+		_, ok := result["mypkg"]
+		assert.False(t, ok, "unrequested package must not appear in result")
 	})
 
-	t.Run("unknown package returns empty slice without error", func(t *testing.T) {
-		results, err := ListActiveBackportBranches(path, "no-such-pkg", now)
+	t.Run("empty package list returns empty map", func(t *testing.T) {
+		result, err := ListAllActiveBackportBranches(path, []string{}, now)
 		require.NoError(t, err)
-		assert.Empty(t, results)
+		assert.Empty(t, result)
 	})
 
 	t.Run("file not found returns error", func(t *testing.T) {
-		_, err := ListActiveBackportBranches("/no/such/file.yml", "mypkg", now)
+		_, err := ListAllActiveBackportBranches("/no/such/file.yml", []string{"mypkg"}, now)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "reading inventory")
 	})

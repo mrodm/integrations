@@ -45,7 +45,7 @@ func DetectPackages(files []string, packagesDir string) ([]string, error) {
 	}
 
 	seen := make(map[string]struct{})
-	var result []string
+	result := make([]string, 0)
 	for _, f := range files {
 		for _, k := range known {
 			if strings.HasPrefix(f, k.prefix) {

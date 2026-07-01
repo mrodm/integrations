@@ -67,11 +67,11 @@ type ActiveResult struct {
 	MaintainedUntil *string `json:"maintained_until"`
 }
 
-// ListActiveBackportBranches returns all active backport branches for the given
-// package in the inventory at path. Branches are returned in inventory order.
-// Returns an empty slice (no error) when the package has no active branches or
-// does not appear in the inventory at all.
-func ListActiveBackportBranches(path, packageName string, now time.Time) ([]ActiveResult, error) {
+// ListAllActiveBackportBranches returns the active backport branches for each
+// package in packages, parsing the inventory at path exactly once.
+// The returned map has one entry per name in packages; packages with no active
+// branches (or not present in the inventory) have an empty, non-nil slice.
+func ListAllActiveBackportBranches(path string, packages []string, now time.Time) (map[string][]ActiveResult, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading inventory: %w", err)
@@ -80,16 +80,25 @@ func ListActiveBackportBranches(path, packageName string, now time.Time) ([]Acti
 	if err := yaml.Unmarshal(data, &inv); err != nil {
 		return nil, fmt.Errorf("parsing inventory: %w", err)
 	}
-	var results []ActiveResult
+
+	want := make(map[string]struct{}, len(packages))
+	for _, p := range packages {
+		want[p] = struct{}{}
+	}
+
+	result := make(map[string][]ActiveResult, len(packages))
+	for _, p := range packages {
+		result[p] = []ActiveResult{}
+	}
 	for _, e := range inv.Backports {
-		if e.Package != packageName {
+		if _, ok := want[e.Package]; !ok {
 			continue
 		}
 		if r := e.activeResult(now); r.Active {
-			results = append(results, r)
+			result[e.Package] = append(result[e.Package], r)
 		}
 	}
-	return results, nil
+	return result, nil
 }
 
 // CheckActive looks up branch in the inventory at path and reports whether it

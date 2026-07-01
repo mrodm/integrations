@@ -21,7 +21,7 @@ import (
 const marker = "<!-- backport-checklist -->"
 
 // PackageBranches pairs a package name with its active backport branches.
-// Branches are in the order returned by ListActiveBackportBranches (inventory order).
+// Branches are in inventory order.
 type PackageBranches struct {
 	Package  string
 	Branches []backports.ActiveResult

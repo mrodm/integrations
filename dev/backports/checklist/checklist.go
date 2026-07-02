@@ -65,8 +65,7 @@ func BuildComment(pkgs []PackageBranches, checked map[string]bool) string {
 	fmt.Fprintln(&b)
 	fmt.Fprintln(&b, "Only branches for packages touched by this PR's current diff are shown.")
 	fmt.Fprintln(&b)
-	fmt.Fprintln(&b, "Check the branches to backport this change to. PRs will be created automatically")
-	fmt.Fprintln(&b, "on merge, or when you update this checklist after merge.")
+	fmt.Fprintln(&b, "Check the branches to backport this change to. PRs will be created automatically on merge, or when you update this checklist after merge.")
 
 	for _, p := range pkgs {
 		if len(p.Branches) == 0 {
@@ -94,10 +93,8 @@ func BuildComment(pkgs []PackageBranches, checked map[string]bool) string {
 	fmt.Fprintln(&b, "---")
 	fmt.Fprintln(&b)
 	fmt.Fprintln(&b, "> [!TIP]")
-	fmt.Fprintln(&b, "> If a branch above is no longer required, set `archived: true` in its entry in")
-	fmt.Fprintln(&b, "> `.backports.yml` to stop it appearing in future checklists.")
-	fmt.Fprintln(&b, `> If the branch has a known end-of-life date, prefer `+"`"+`maintained_until: "YYYY-MM-DD"`+"`"+` —`)
-	fmt.Fprintln(&b, "> it will be excluded automatically once that date passes.")
+	fmt.Fprintln(&b, "> If a branch above is no longer required, set `archived: true` in its entry in `.backports.yml` to stop it appearing in future checklists.")
+	fmt.Fprintln(&b, `> If the branch has a known end-of-life date, prefer `+"`"+`maintained_until: "YYYY-MM-DD"`+"`"+` — it will be excluded automatically once that date passes.`)
 
 	return b.String()
 }

@@ -10,6 +10,9 @@ on:
 jobs:
   detect-packages:
     runs-on: ubuntu-latest
+    # Skip PRs created by the sync-changelog workflow — those backport changelog
+    # entries back to main and do not need a backport checklist of their own.
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'backport:sync-changelog') }}
     # No permissions — this job runs in the restricted pull_request context
     # and must be fork-safe. Write permissions live in post-backport-checklist.yml
     # which is triggered via workflow_run and runs in the base repository context.

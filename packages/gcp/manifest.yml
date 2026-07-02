@@ -3,6 +3,7 @@ title: Google Cloud Platform
 version: "2.50.1"
 description: Collect logs and metrics from Google Cloud Platform with Elastic Agent.
 type: integration
+
 icons:
   - src: /img/logo_gcp.svg
     title: logo gcp

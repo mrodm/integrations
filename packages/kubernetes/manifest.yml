@@ -4,7 +4,6 @@ title: Kubernetes
 version: 1.85.2
 description: Collect logs and metrics from Kubernetes clusters with Elastic Agent.
 type: integration
-
 categories:
   - observability
   - containers

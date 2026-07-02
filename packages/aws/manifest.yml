@@ -4,6 +4,7 @@ title: AWS
 version: 6.20.2
 description: Collect logs and metrics from Amazon Web Services (AWS) with Elastic Agent.
 type: integration
+
 categories:
   - aws
   - cloud

@@ -86,7 +86,7 @@ func CreateSyncPR(entriesTSV, workingBranch, backportPRNumber, backportBranch, p
 		"--base", "main",
 		"--head", workingBranch,
 		"--title", prTitle,
-		"--label", "automation",
+		"--label", "backport:sync-changelog",
 		"--reviewer", "elastic/ecosystem",
 		"--body", body,
 	)

@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - add_workflows_backport_prs-test
   issue_comment:
     types: [edited]
 

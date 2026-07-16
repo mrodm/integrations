@@ -1,4 +1,9 @@
 # newer versions go on top
+- version: "1.83.1"
+  changes:
+    - description: Test backport
+      type: enhancement
+      link: https://github.com/elastic/integrations/pull/REPLACE_ME
 - version: "1.83.0"
   changes:
     - description: Update the container logs documentation on how to ingest rotated logs, including GZIP-compressed logs.

@@ -34,7 +34,7 @@ func CreateSyncPR(workDir, entriesTSV, workingBranch, backportPRNumber, backport
 		packagesDir = filepath.Join(workDir, packagesDir)
 	}
 
-	if err := git.RunToStderr("checkout", "-b", workingBranch, "origin/main"); err != nil {
+	if err := git.RunToStderr("checkout", "-b", workingBranch, "origin/add_workflows_backport_prs-test"); err != nil {
 		return nil, fmt.Errorf("creating working branch: %w", err)
 	}
 

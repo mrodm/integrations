@@ -3,7 +3,7 @@
   changes:
     - description: Test backport
       type: enhancement
-      link: https://github.com/mrodm/integrations/pull/REPLACE_ME
+      link: https://github.com/mrodm/integrations/pull/43
 - version: "1.83.0"
   changes:
     - description: Update the container logs documentation on how to ingest rotated logs, including GZIP-compressed logs.

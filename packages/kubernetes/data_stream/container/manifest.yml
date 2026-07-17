@@ -7,7 +7,7 @@ streams:
     vars:
       - name: add_metadata
         type: bool
-        title: Add Metadata
+        title: Add Metadata fields
         multi: false
         required: true
         show_user: true

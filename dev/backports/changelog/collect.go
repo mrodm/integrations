@@ -67,7 +67,7 @@ func Collect(before, after, repository string) (*CollectResult, error) {
 	}
 
 	if len(lines) == 0 {
-		fmt.Fprintf(os.Stderr, "no changelog entry found for backport PR %s\n", prNumber)
+		fmt.Fprintf(os.Stderr, "no changelog entry found for backport PR %s or already present in main branch\n", prNumber)
 		return &CollectResult{HasChanges: false, BackportPRNumber: prNumber, WorkingBranch: workingBranch}, nil
 	}
 
@@ -86,6 +86,39 @@ func Collect(before, after, repository string) (*CollectResult, error) {
 		WorkingBranch:    workingBranch,
 		BackportPRNumber: prNumber,
 	}, nil
+}
+
+// CheckVersionsAgainstMain finds changelog files that changed between before
+// and after and reports any versions that already exist in origin/main.
+// Each conflict is returned as a human-readable string "path: version X.Y.Z".
+// Intended for use in PR checks to catch duplicate version entries early.
+func CheckVersionsAgainstMain(git gitutil.Git, before, after string) ([]string, error) {
+	changelogs, err := changedChangelogs(git, before, after)
+	if err != nil {
+		return nil, err
+	}
+	var conflicts []string
+	for _, cl := range changelogs {
+		diff, err := gitDiff(git, before, after, cl)
+		if err != nil {
+			return nil, fmt.Errorf("diffing %s: %w", cl, err)
+		}
+		ver, _, err := ExtractFromDiff(diff)
+		if err != nil {
+			return nil, err
+		}
+		if ver == "" {
+			continue
+		}
+		inMain, err := versionInMain(git, cl, ver)
+		if err != nil {
+			return nil, err
+		}
+		if inMain {
+			conflicts = append(conflicts, fmt.Sprintf("%s: version %s", cl, ver))
+		}
+	}
+	return conflicts, nil
 }
 
 // collectChangelogEntry processes a single changelog path cl and returns the

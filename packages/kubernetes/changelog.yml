@@ -1,9 +1,4 @@
 # newer versions go on top
-- version: "1.83.5"
-  changes:
-    - description: Test backport
-      type: enhancement
-      link: https://github.com/mrodm/integrations/pull/48
 - version: "1.83.4"
   changes:
     - description: Test backport

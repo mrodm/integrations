@@ -29,6 +29,11 @@
     - description: Add kubernetes.container.status.last_terminated_exitcode field to the state_container data stream.
       type: enhancement
       link: https://github.com/elastic/integrations/pull/16680
+- version: "1.83.5"
+  changes:
+    - description: Test backport
+      type: enhancement
+      link: https://github.com/mrodm/integrations/pull/64
 - version: "1.83.1"
   changes:
     - description: Add `timeout` setting to the kube-state-metrics input for tuning the HTTP request timeout on large clusters.

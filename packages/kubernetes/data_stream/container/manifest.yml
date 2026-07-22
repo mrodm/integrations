@@ -7,7 +7,7 @@ streams:
     vars:
       - name: add_metadata
         type: bool
-        title: Add Metadata
+        title: Add Metadata fields
         multi: false
         required: true
         show_user: true
@@ -36,7 +36,7 @@ streams:
         default: 10s
       - name: ssl.verification_mode
         type: text
-        title: SSL Verification Mode
+        title: SSL Verification mode
         multi: false
         required: true
         show_user: true

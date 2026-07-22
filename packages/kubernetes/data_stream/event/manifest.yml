@@ -12,7 +12,7 @@ streams:
         default: 10s
       - name: add_metadata
         type: bool
-        title: Add Metadata
+        title: Add metadata fields
         multi: false
         required: true
         show_user: true

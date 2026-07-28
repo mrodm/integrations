@@ -15,6 +15,7 @@ icons:
     src: /img/security-logo-color-64px.svg
     type: image/svg+xml
 name: security_detection_engine
+
 owner:
   github: elastic/threat-research-and-detection-engineering
   type: elastic

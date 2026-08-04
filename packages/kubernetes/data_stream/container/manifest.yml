@@ -36,7 +36,7 @@ streams:
         default: 10s
       - name: ssl.verification_mode
         type: text
-        title: SSL Verification mode
+        title: SSL Verification Mode
         multi: false
         required: true
         show_user: true

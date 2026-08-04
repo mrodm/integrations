@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - add_workflows_backport_prs-test
   issue_comment:
     types: [edited]
 
@@ -92,7 +91,7 @@ jobs:
           if [[ "$EVENT_NAME" == "push" ]]; then
             MERGE_SHA="$PUSH_SHA"
             PR_DATA=$(gh api "repos/$REPOSITORY/commits/$MERGE_SHA/pulls" \
-              --jq 'map(select(.base.ref == "add_workflows_backport_prs-test")) | first // empty')
+              --jq 'map(select(.base.ref == "main")) | first // empty')
             if [[ -z "$PR_DATA" ]]; then
               echo "No PR found for commit $MERGE_SHA — skipping"
               exit 0
@@ -125,13 +124,14 @@ jobs:
 
       - name: Set up Go
         if: steps.resolve.outputs.pr_number != ''
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version-file: .go-version
+          # Use the backport tool's own Go version (pinned to main's version).
+          go-version-file: cmd/backport/.go-version
 
-      - name: Install mage
+      - name: Build backport tool
         if: steps.resolve.outputs.pr_number != ''
-        run: go install github.com/magefile/mage
+        run: go build -C cmd/backport -o "$GITHUB_WORKSPACE/backport" .
 
       - name: Find checklist comment
         id: find-comment

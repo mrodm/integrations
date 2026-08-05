@@ -1,7 +1,7 @@
 format_version: 3.1.2
 name: kubernetes
 title: Kubernetes
-version: 1.83.3
+version: 1.83.4
 description: Collect logs and metrics from Kubernetes clusters with Elastic Agent.
 type: integration
 categories:
@@ -16,6 +16,7 @@ screenshots:
     title: Metricbeat Kubernetes Overview
     size: 1896x961
     type: image/png
+
 icons:
   - src: /img/logo_kubernetes.svg
     title: Logo Kubernetes

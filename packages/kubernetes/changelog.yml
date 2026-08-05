@@ -3,7 +3,7 @@
   changes:
     - description: Test backport
       type: enhancement
-      link: https://github.com/mrodm/integrations/pull/REPLACE_ME
+      link: https://github.com/mrodm/integrations/pull/69
 - version: "1.83.3"
   changes:
     - description: Test backport

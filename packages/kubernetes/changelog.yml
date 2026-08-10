@@ -3,7 +3,7 @@
   changes:
     - description: Test e2d.
       type: enhancement
-      link: https://github.com/mrodm/integrations/pull/REPLACE_ME
+      link: https://github.com/mrodm/integrations/pull/80
 - version: "1.83.3"
   changes:
     - description: Test backport

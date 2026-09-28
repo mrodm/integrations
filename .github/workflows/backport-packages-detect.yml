@@ -148,11 +148,9 @@ jobs:
           # Append author/merger mentions so GitHub notifies them. Omit the merger
           # mention when the PR was merged by its own author (no duplicate ping).
           if [[ "$PR_AUTHOR" == "$PR_MERGER" ]]; then
-            NEW_BODY="${NEW_BODY}
-cc @${PR_AUTHOR}"
+            NEW_BODY=$(printf '%s\ncc @%s' "$NEW_BODY" "$PR_AUTHOR")
           else
-            NEW_BODY="${NEW_BODY}
-cc @${PR_AUTHOR} @${PR_MERGER}"
+            NEW_BODY=$(printf '%s\ncc @%s @%s' "$NEW_BODY" "$PR_AUTHOR" "$PR_MERGER")
           fi
 
           BODY_FILE=$(mktemp)

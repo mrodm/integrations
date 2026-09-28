@@ -18,7 +18,7 @@ streams:
         multi: false
         required: false
         show_user: true
-        description: ARN of the log group to collect logs from.
+        description: ARN of the log group to collect logs from. Hello world
       - name: log_group_name
         type: text
         title: Log group name

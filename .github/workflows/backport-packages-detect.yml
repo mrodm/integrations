@@ -32,7 +32,9 @@ jobs:
         # this job ran (i.e. the PR does not carry the backport:sync-changelog
         # label). When the job is skipped the artifact is never uploaded, and
         # the post workflow exits early on the missing-file check.
-        run: echo '{}' > pr-trigger.json
+        run: |
+          echo "Hello World"
+          echo '{}' > pr-trigger.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

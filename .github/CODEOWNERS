@@ -10,5 +10,5 @@
 # Package owners below.
 # Please keep the list sorted.
 /packages/infoblox @elastic/security-service-integrations
-/packages/kubernetes @elastic/obs-ds-hosted-services
+/packages/kubernetes @elastic/obs-signals-metrics-team
 /packages/kubernetes/kibana @elastic/obs-ds-hosted-services
